@@ -7,7 +7,7 @@ def test_health(client):
     data = response.json()
     assert data["status"] == "healthy"
     assert "models_loaded" in data
-    assert data["version"] == "1.0.0"
+    assert data["version"] == "2.0.0"
 
 
 def test_models(client):
@@ -15,7 +15,7 @@ def test_models(client):
     assert response.status_code == 200
     data = response.json()
     assert "models" in data
-    for name in ["q_learning", "policy_gradient", "dqn"]:
+    for name in ["ppo", "a2c", "dqn"]:
         assert name in data["models"]
         assert "loaded" in data["models"][name]
         assert "file_exists" in data["models"][name]
