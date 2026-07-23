@@ -193,6 +193,21 @@ def _find_convergence(rewards, window=10, threshold=0.05):
     return len(rewards)
 
 
+@app.route("/api/docs")
+def api_docs():
+    return jsonify({
+        "openapi": "3.0.0",
+        "info": {"title": "RL Production Optimizer", "version": "1.0.0"},
+        "paths": {
+            "/api/health": {"get": {"summary": "Health check"}},
+            "/api/models": {"get": {"summary": "Model info"}},
+            "/api/optimize": {"post": {"summary": "Get optimal action for a scenario"}},
+            "/api/simulate": {"post": {"summary": "Run simulation episode"}},
+            "/api/compare": {"get": {"summary": "Compare model performance"}},
+        }
+    })
+
+
 load_models()
 
 if __name__ == "__main__":
