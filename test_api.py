@@ -7,6 +7,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from fastapi.testclient import TestClient
 from app import app
 
 
@@ -14,37 +15,27 @@ class TestAPI(unittest.TestCase):
     """Test all API endpoints."""
 
     def setUp(self):
-        self.client = app.test_client()
-        self.client.testing = True
+        self.client = TestClient(app)
 
     def test_health(self):
         resp = self.client.get("/api/health")
         self.assertEqual(resp.status_code, 200)
-        data = resp.get_json()
+        data = resp.json()
         self.assertEqual(data["status"], "healthy")
         self.assertIn("models_loaded", data)
-
-    def test_index(self):
-        resp = self.client.get("/")
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn(b"RL Production Optimizer", resp.data)
 
     def test_models(self):
         resp = self.client.get("/api/models")
         self.assertEqual(resp.status_code, 200)
-        data = resp.get_json()
+        data = resp.json()
         self.assertIn("models", data)
         for name in ["q_learning", "policy_gradient", "dqn"]:
             self.assertIn(name, data["models"])
 
     def test_optimize(self):
-        resp = self.client.post(
-            "/api/optimize",
-            data=json.dumps({}),
-            content_type="application/json",
-        )
+        resp = self.client.post("/api/optimize", json={})
         self.assertEqual(resp.status_code, 200)
-        data = resp.get_json()
+        data = resp.json()
         self.assertIn("scenario", data)
         self.assertIn("recommendations", data)
         self.assertIn("well", data["scenario"])
@@ -71,23 +62,15 @@ class TestAPI(unittest.TestCase):
                 "oil_viscosity_cp": 5,
             },
         }
-        resp = self.client.post(
-            "/api/optimize",
-            data=json.dumps({"scenario": scenario}),
-            content_type="application/json",
-        )
+        resp = self.client.post("/api/optimize", json={"scenario": scenario})
         self.assertEqual(resp.status_code, 200)
-        data = resp.get_json()
+        data = resp.json()
         self.assertEqual(data["scenario"]["well"]["oil_rate_bopd"], 200)
 
     def test_simulate(self):
-        resp = self.client.post(
-            "/api/simulate",
-            data=json.dumps({"num_steps": 10}),
-            content_type="application/json",
-        )
+        resp = self.client.post("/api/simulate", json={"num_steps": 10})
         self.assertEqual(resp.status_code, 200)
-        data = resp.get_json()
+        data = resp.json()
         self.assertEqual(data["simulation_length"], 10)
         self.assertIn("trajectories", data)
         for model_name in ["q_learning", "policy_gradient", "dqn"]:
@@ -101,7 +84,7 @@ class TestAPI(unittest.TestCase):
     def test_compare(self):
         resp = self.client.get("/api/compare")
         self.assertEqual(resp.status_code, 200)
-        data = resp.get_json()
+        data = resp.json()
         self.assertIn("comparison", data)
         for model_name in ["q_learning", "policy_gradient", "dqn"]:
             if model_name in data["comparison"]:

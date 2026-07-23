@@ -1,20 +1,36 @@
-"""Flask API for RL Production Optimizer."""
+"""FastAPI application for RL Production Optimizer."""
 
 import os
 import sys
 import json
 import numpy as np
+from typing import Any, Dict, Optional
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, render_template, jsonify, request
 from rl_optimizer.data_generator import ProductionDataGenerator
 from rl_optimizer.utils.state_encoder import StateEncoder
 from rl_optimizer.models.q_learning import QLearningAgent
 from rl_optimizer.models.policy_gradient import PolicyGradientAgent
 from rl_optimizer.models.dqn_agent import DQNAgent
 
-app = Flask(__name__)
+app = FastAPI(
+    title="RL Production Optimizer",
+    description="Reinforcement Learning Production Optimization for Oil & Gas",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs", "models")
 data_gen = ProductionDataGenerator(seed=123)
@@ -49,25 +65,42 @@ def load_models():
             print(f"Failed to load DQN: {e}")
 
 
-@app.route("/")
-def index():
-    """Serve the main dashboard."""
-    return render_template("index.html")
+class OptimizeRequest(BaseModel):
+    scenario: Optional[Dict[str, Any]] = None
 
 
-@app.route("/api/health", methods=["GET"])
-def health():
-    """Health check endpoint."""
-    return jsonify({
+class SimulateRequest(BaseModel):
+    num_steps: int = 50
+
+
+def _find_convergence(rewards, window=10, threshold=0.05):
+    """Find episode where reward stabilized."""
+    if len(rewards) < window:
+        return len(rewards)
+    for i in range(window, len(rewards)):
+        segment = rewards[i - window:i]
+        mean_val = np.mean(segment)
+        if mean_val != 0 and np.std(segment) / abs(mean_val) < threshold:
+            return i - window
+    return len(rewards)
+
+
+@app.on_event("startup")
+async def startup_event():
+    load_models()
+
+
+@app.get("/api/health")
+async def health():
+    return {
         "status": "healthy",
         "models_loaded": list(loaded_models.keys()),
         "version": "1.0.0",
-    })
+    }
 
 
-@app.route("/api/models", methods=["GET"])
-def list_models():
-    """List available models and their status."""
+@app.get("/api/models")
+async def list_models():
     models_info = {}
     summary_path = os.path.join(MODELS_DIR, "training_summary.json")
     summary = {}
@@ -81,16 +114,14 @@ def list_models():
             "file_exists": os.path.exists(os.path.join(MODELS_DIR, f"{name}.pkl")),
             "training_stats": summary.get(name, {}),
         }
-    return jsonify({"models": models_info})
+    return {"models": models_info}
 
 
-@app.route("/api/optimize", methods=["POST"])
-def optimize():
-    """Get optimal action for a given scenario."""
-    data = request.get_json(silent=True) or {}
+@app.post("/api/optimize")
+async def optimize(request: OptimizeRequest):
     scenario = data_gen.generate_scenario()
-    if "scenario" in data:
-        scenario = data["scenario"]
+    if request.scenario:
+        scenario = request.scenario
 
     results = {}
     for model_name, model in loaded_models.items():
@@ -106,18 +137,15 @@ def optimize():
             continue
         results[model_name] = pred
 
-    return jsonify({
+    return {
         "scenario": scenario,
         "recommendations": results,
-    })
+    }
 
 
-@app.route("/api/simulate", methods=["POST"])
-def simulate():
-    """Run a simulation episode and return trajectory."""
-    data = request.get_json(silent=True) or {}
-    num_steps = data.get("num_steps", 50)
-    scenarios = data_gen.generate_episode(num_steps)
+@app.post("/api/simulate")
+async def simulate(request: SimulateRequest):
+    scenarios = data_gen.generate_episode(request.num_steps)
 
     trajectories = {}
     for model_name, model in loaded_models.items():
@@ -149,18 +177,17 @@ def simulate():
             "rewards": [round(r, 2) for r in rewards],
             "cumulative_reward": cumulative,
             "total_reward": round(sum(rewards), 2),
-            "avg_reward": round(np.mean(rewards), 2),
+            "avg_reward": round(float(np.mean(rewards)), 2),
         }
 
-    return jsonify({"simulation_length": num_steps, "trajectories": trajectories})
+    return {"simulation_length": request.num_steps, "trajectories": trajectories}
 
 
-@app.route("/api/compare", methods=["GET"])
-def compare():
-    """Compare model performance using training summary."""
+@app.get("/api/compare")
+async def compare():
     summary_path = os.path.join(MODELS_DIR, "training_summary.json")
     if not os.path.exists(summary_path):
-        return jsonify({"error": "No training summary found. Run train.py first."}), 404
+        raise HTTPException(status_code=404, detail="No training summary found. Run train.py first.")
 
     with open(summary_path, "r") as f:
         summary = json.load(f)
@@ -178,24 +205,12 @@ def compare():
                 "convergence_episode": _find_convergence(rewards),
             }
 
-    return jsonify({"comparison": comparison, "training_date": summary.get("training_date")})
+    return {"comparison": comparison, "training_date": summary.get("training_date")}
 
 
-def _find_convergence(rewards, window=10, threshold=0.05):
-    """Find episode where reward stabilized."""
-    if len(rewards) < window:
-        return len(rewards)
-    for i in range(window, len(rewards)):
-        segment = rewards[i - window:i]
-        mean_val = np.mean(segment)
-        if mean_val != 0 and np.std(segment) / abs(mean_val) < threshold:
-            return i - window
-    return len(rewards)
-
-
-@app.route("/api/docs")
-def api_docs():
-    return jsonify({
+@app.get("/api/docs")
+async def api_docs():
+    return {
         "openapi": "3.0.0",
         "info": {"title": "RL Production Optimizer", "version": "1.0.0"},
         "paths": {
@@ -205,10 +220,10 @@ def api_docs():
             "/api/simulate": {"post": {"summary": "Run simulation episode"}},
             "/api/compare": {"get": {"summary": "Compare model performance"}},
         }
-    })
+    }
 
-
-load_models()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5019, debug=False)
+    import uvicorn
+    load_models()
+    uvicorn.run(app, host="0.0.0.0", port=5019)
