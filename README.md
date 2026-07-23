@@ -1,16 +1,34 @@
 # RL Production Optimizer
 
-Reinforcement Learning system for optimizing oil production using Q-learning, policy gradient, and Deep Q-Network approaches.
+Reinforcement Learning system for optimizing oil production using modern RL frameworks and environments.
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| RL Algorithms | **Stable Baselines3** - PPO, A2C, DQN agents |
+| RL Environments | **Gymnasium** - standardized RL environments |
+| Data Processing | pandas, numpy, joblib |
+| Web Server | **FastAPI** + uvicorn |
+| Monitoring | prometheus-fastapi-instrumentator |
+| Validation | pydantic v2 |
+| Visualization | matplotlib, seaborn |
+
+### Key Libraries
+- Stable Baselines3 - Reliable implementations of RL algorithms (PPO, A2C, DQN, SAC)
+- Gymnasium - Standard API for reinforcement learning environments
+- FastAPI - Modern async web framework
+- pandas / numpy - Data processing
 
 ## Overview
 
 This project applies reinforcement learning to oil field production optimization. An RL agent learns to make decisions about production rate adjustments (increase, decrease, or maintain) based on well states, equipment conditions, market prices, and reservoir properties.
 
-Three RL algorithms are implemented:
+### RL Algorithms (Stable Baselines3)
 
-- **Q-Learning**: Tabular method with discretized state space and epsilon-greedy exploration
-- **Policy Gradient (REINFORCE)**: Monte Carlo policy gradient with softmax action selection
-- **DQN Agent**: Neural network approximation with experience replay and target network
+- **PPO**: Proximal Policy Optimization - stable policy gradient method
+- **A2C**: Advantage Actor-Critic - synchronous advantage actor-critic
+- **DQN**: Deep Q-Network - value-based deep RL with experience replay
 
 ## Project Structure
 
@@ -21,9 +39,11 @@ rl-production-optimizer/
         data_generator.py          # Synthetic production data generation
         models/
             __init__.py
-            q_learning.py          # Tabular Q-Learning agent
-            policy_gradient.py     # REINFORCE policy gradient agent
-            dqn_agent.py           # Deep Q-Network agent (numpy)
+            ppo_agent.py           # PPO agent (Stable Baselines3)
+            a2c_agent.py           # A2C agent (Stable Baselines3)
+            dqn_agent.py           # DQN agent (Stable Baselines3)
+        envs/
+            production_env.py      # Gymnasium environment
         utils/
             __init__.py
             state_encoder.py       # State normalization and discretization
@@ -31,7 +51,7 @@ rl-production-optimizer/
     templates/
         index.html                 # Web dashboard
     train.py                       # Training pipeline
-    app.py                         # Flask API server (port 5019)
+    app.py                         # FastAPI API server (port 5019)
     test_api.py                    # API test suite
     requirements.txt
     setup.py
@@ -49,7 +69,7 @@ pip install -r requirements.txt
 python train.py
 ```
 
-This trains all three agents over 50 episodes and saves models to `outputs/models/`.
+This trains all three Stable Baselines3 agents and saves models to `outputs/models/`.
 
 ## Running the API
 
@@ -107,6 +127,6 @@ Revenue minus operating cost, with penalties for high water cut and equipment st
 python test_api.py
 ```
 
-## Elaborado por
+---
 
-Ing. Kelvin Cabrera
+Elaborado por Ing. Kelvin Cabrera
