@@ -19,6 +19,7 @@ from stable_baselines3 import PPO, A2C, DQN
 
 from rl_optimizer.data_generator import ProductionDataGenerator
 from rl_optimizer.utils.state_encoder import StateEncoder
+from rl_optimizer.env import OilGasEnv
 
 app = FastAPI(
     title="RL Production Optimizer",
@@ -41,41 +42,6 @@ data_gen = ProductionDataGenerator(seed=123)
 encoder = StateEncoder(num_bins=5)
 
 loaded_models = {}
-
-
-class OilGasEnv(gym.Env):
-    """Gymnasium environment for oil & gas production (for model loading)."""
-    def __init__(self):
-        super().__init__()
-        self.action_space = spaces.Discrete(5)
-        self.observation_space = spaces.Box(low=0, high=1000, shape=(8,), dtype=np.float32)
-        self.state = None
-        self.step_count = 0
-
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-        self.step_count = 0
-        scenario = data_gen.generate_scenario()
-        self.state = np.array([
-            scenario.get("flow_rate", 50),
-            scenario.get("pressure", 150),
-            scenario.get("temperature", 80),
-            scenario.get("chemical_injection", 10),
-            scenario.get("water_cut", 30),
-            scenario.get("gas_oil_ratio", 100),
-            scenario.get("wellhead_temp", 75),
-            scenario.get("tubing_pressure", 200),
-        ], dtype=np.float32)
-        self.state = np.clip(self.state, 0, 1000)
-        return self.state, {}
-
-    def step(self, action):
-        self.step_count += 1
-        reward = float(np.sum(self.state[:3]) * 0.01 - abs(action - 2) * 0.1)
-        noise = np.random.normal(0, 1, size=8) * 0.1
-        self.state = np.clip(self.state + noise, 0, 1000).astype(np.float32)
-        terminated = self.step_count >= 100
-        return self.state, reward, terminated, False, {}
 
 
 def load_models():

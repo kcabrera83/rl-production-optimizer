@@ -9,61 +9,13 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import gymnasium as gym
-from gymnasium import spaces
 from stable_baselines3 import PPO, A2C, DQN
 from stable_baselines3.common.env_util import make_vec_env
 
-from rl_optimizer.data_generator import ProductionDataGenerator
+from rl_optimizer.env import OilGasEnv
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs", "models")
 NUM_EPISODES = 50
-STEPS_PER_EPISODE = 100
-
-
-class OilGasEnv(gym.Env):
-    """Custom Gymnasium environment for oil & gas production"""
-    metadata = {"render_modes": ["human"]}
-
-    def __init__(self, data_gen=None, seed=42):
-        super().__init__()
-        self.action_space = spaces.Discrete(5)
-        self.observation_space = spaces.Box(low=0, high=1000, shape=(8,), dtype=np.float32)
-        self.data_gen = data_gen or ProductionDataGenerator(seed=seed)
-        self.state = None
-        self.step_count = 0
-        self.max_steps = STEPS_PER_EPISODE
-
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-        self.step_count = 0
-        scenario = self.data_gen.generate_scenario()
-        self.state = np.array([
-            scenario.get("flow_rate", 50),
-            scenario.get("pressure", 150),
-            scenario.get("temperature", 80),
-            scenario.get("chemical_injection", 10),
-            scenario.get("water_cut", 30),
-            scenario.get("gas_oil_ratio", 100),
-            scenario.get("wellhead_temp", 75),
-            scenario.get("tubing_pressure", 200),
-        ], dtype=np.float32)
-        self.state = np.clip(self.state, 0, 1000)
-        return self.state, {}
-
-    def step(self, action):
-        self.step_count += 1
-        reward = self._calculate_reward(action)
-        self.state = self._next_state(action)
-        terminated = self.step_count >= self.max_steps
-        truncated = False
-        return self.state, reward, terminated, truncated, {}
-
-    def _calculate_reward(self, action):
-        return float(np.sum(self.state[:3]) * 0.01 - abs(action - 2) * 0.1)
-
-    def _next_state(self, action):
-        noise = np.random.normal(0, 1, size=8) * 0.1
-        return np.clip(self.state + noise, 0, 1000).astype(np.float32)
 
 
 def train_ppo():
