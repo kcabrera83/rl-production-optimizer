@@ -1,5 +1,3 @@
-"""Deep Q-Network style agent using a simple numpy neural network."""
-
 import numpy as np
 import pickle
 import os

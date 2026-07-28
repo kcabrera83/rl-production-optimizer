@@ -1,5 +1,3 @@
-"""Gymnasium environment for oil & gas production optimization."""
-
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
@@ -13,7 +11,7 @@ class OilGasEnv(gym.Env):
     """Custom Gymnasium environment for oil & gas production"""
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, data_gen=None, seed=42):
+    def __init__(self, data_gen=None, seed=2024):
         super().__init__()
         self.action_space = spaces.Discrete(5)
         self.observation_space = spaces.Box(low=0, high=1000, shape=(8,), dtype=np.float32)

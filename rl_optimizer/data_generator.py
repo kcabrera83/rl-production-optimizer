@@ -1,12 +1,10 @@
-"""Synthetic data generator for oil production scenarios."""
-
 import numpy as np
 
 
 class ProductionDataGenerator:
     """Generates synthetic oil production scenarios for RL training."""
 
-    def __init__(self, seed=42):
+    def __init__(self, seed=2024):
         self.rng = np.random.RandomState(seed)
         self.well_states = ["active", "shut_in", "maintenance", "workover"]
         self.equipment_conditions = ["optimal", "degraded", "critical", "failed"]

@@ -1,5 +1,3 @@
-"""Test suite for RL Production Optimizer API."""
-
 import os
 import sys
 import json

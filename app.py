@@ -1,5 +1,3 @@
-"""FastAPI application for RL Production Optimizer using Stable Baselines3 + Gymnasium."""
-
 import os
 import sys
 import json
@@ -24,7 +22,7 @@ from rl_optimizer.env import OilGasEnv
 app = FastAPI(
     title="RL Production Optimizer",
     description="Reinforcement Learning Production Optimization for Oil & Gas (SB3 + Gymnasium)",
-    version="2.0.0",
+    version="0.1",
 )
 
 app.add_middleware(
@@ -38,7 +36,7 @@ app.add_middleware(
 Instrumentator().instrument(app).expose(app)
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs", "models")
-data_gen = ProductionDataGenerator(seed=123)
+data_gen = ProductionDataGenerator(seed=1389)
 encoder = StateEncoder(num_bins=5)
 
 loaded_models = {}

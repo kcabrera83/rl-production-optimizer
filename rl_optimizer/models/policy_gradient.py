@@ -1,5 +1,3 @@
-"""Simple Policy Gradient agent using numpy."""
-
 import numpy as np
 import pickle
 import os

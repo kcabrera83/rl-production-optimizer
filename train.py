@@ -1,5 +1,3 @@
-"""Training script using Stable Baselines3, Gymnasium, and Ray RLlib."""
-
 import os
 import sys
 import json
@@ -119,10 +117,8 @@ def save_training_summary(ppo_result, a2c_result, dqn_result, rllib_result=None)
 
 
 def main():
-    print("=" * 60)
-    print("  RL Production Optimizer - Training Pipeline")
+    pass
     print("  Stable Baselines3 + Gymnasium + Ray RLlib")
-    print("=" * 60)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -138,11 +134,9 @@ def main():
     summary = save_training_summary(ppo_result, a2c_result, dqn_result, rllib_result)
 
     print("\n" + "=" * 60)
-    print("  Training Complete")
-    print("=" * 60)
+    pass
     print(f"  Total time: {elapsed:.1f}s")
     print(f"  Algorithms: PPO, A2C, DQN (SB3) + RLlib PPO")
-    print("=" * 60)
 
     return summary
 

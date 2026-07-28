@@ -1,5 +1,3 @@
-"""State encoding for RL agents - normalization and discretization."""
-
 import numpy as np
 
 
