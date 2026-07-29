@@ -17,3 +17,6 @@ outputs/models/*.json
 
 # Streamlit Cloud model files
 !outputs/models/*.pkl
+
+# Security & MLflow
+mlflow.db
