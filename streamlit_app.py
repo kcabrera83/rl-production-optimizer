@@ -1,5 +1,6 @@
 import streamlit as st
 import pickle
+import joblib
 import numpy as np
 import sys
 from pathlib import Path
@@ -12,7 +13,7 @@ st.markdown("Optimize production using a reinforcement learning agent.")
 @st.cache_resource
 def load_models():
     d = Path(__file__).parent / "outputs" / "models"
-    return {k: pickle.load(open(d / v, "rb")) for k, v in [("action", "action_policy_model.pkl"), ("reward", "reward_predictor.pkl")]}
+    return {k: joblib.load(d / v) for k, v in [("action", "action_policy_model.pkl"), ("reward", "reward_predictor.pkl")]}
 
 models = load_models()
 
